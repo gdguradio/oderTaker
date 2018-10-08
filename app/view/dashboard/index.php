@@ -14,7 +14,61 @@
         <script src="/orderTaker/app/assets/js/demo_ui.js"></script>
         <script src="/orderTaker/app/assets/js/bootstrap.min.js"></script>
         <script src="/orderTaker/app/assets/js/demo.js"></script>
-        <script src="/orderTaker/app/assets/js/bootstrap-datetimepicker.min.js"></script>   
+        <script src="/orderTaker/app/assets/js/bootstrap-datetimepicker.min.js"></script>  
+        <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .controls {
+        margin-top: 10px;
+        border: 1px solid transparent;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        height: 32px;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      #origin-input,
+      #destination-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 200px;
+      }
+
+      #origin-input:focus,
+      #destination-input:focus {
+        border-color: #4d90fe;
+      }
+
+      #mode-selector {
+        color: #fff;
+        background-color: #4d90fe;
+        margin-left: 12px;
+        padding: 5px 11px 0px 11px;
+      }
+
+      #mode-selector label {
+        font-family: Roboto;
+        font-size: 13px;
+        font-weight: 300;
+      }
+
+    </style> 
     </head>
     <body>
         <div class="container">
@@ -27,18 +81,14 @@
                             <div class="panel-body">
                                 <div class="pull-right">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-default btn-filter" data-target="all">All</button>
-                                        <button type="button" class="btn btn-warning btn-filter" data-target="pending">Pending</button>
-                                        <button type="button" class="btn btn-danger btn-filter" data-target="cancelled">Cancelled</button>
+                                        <button type="button" class="btn btn-default btn-filter" data-toggle="modal" data-target="#DemoModal" data-action="Search">Search</button>
                                         <button type="button" class="btn btn-success btn-action" data-toggle="modal" data-target="#DemoModal" data-action="Add">Add</button>
                                         <button type="button" class="btn btn-primary btn-action" data-toggle="modal" data-target="#DemoModal" data-action="Edit">Edit</button>
                                         <button type="button" id="delete"class="btn btn-filter btn-action" data-action="Delete">Delete</button>
-                                        <!--<button type="button" class="btn btn-filter btn-action" data-toggle="modal" data-target="#DemoModal" data-action="Delete">Delete</button>-->
-
                                     </div>
                                 </div>
                                 <div class="table-container">
-                                    <table class="table table-filter" id="tasktable">
+                                    <table class="table table-filter" id="mapRoutesTable">
                                         <tbody>
                                             <tr data-status="add">
                                                 <td>
@@ -97,39 +147,24 @@
                     <div class="modal-body">
                         <form id="demoform" name="demoform" method="post">
                             <div class="form-group">
-                                <label for="recipient-name" class="form-control-label">Target Date:</label>
-                                <div class="container">
-                                    <div class="row">
-                                        <div class='col-sm-6'>
-                                            <div class="form-group">
-                                                <div class='input-group date' id='datetimepicker5'>
-                                                    <input type='text' class="form-control" name="task_date"/>
-                                                    <span class="input-group-addon">
-                                                        <span class="glyphicon glyphicon-calendar"></span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <label for="message-text" class="form-control-label">Origin:</label>
+                                <input id="origin-input" class="controls" type="text" placeholder="Enter an origin location">
                             </div>
                             <div class="form-group">
-                                <label for="message-text" class="form-control-label">Task:</label>
-                                <textarea class="form-control" name="task"></textarea>
+                                <label for="message-text" class="form-control-label">Destination:</label>
+                                <input id="destination-input" class="controls" type="text" placeholder="Enter a destination location">
                             </div>
-                            <div class="form-group">
-                                <label for="message-text" class="form-control-label">Person/s:</label>
-                                <input type='text' class="form-control" name="task_person"/>
-                            </div> 
-                            <div class="form-group">
-                                <label for="message-text" class="form-control-label">Status:</label>
-                                <select class="form-control" name="task_status">
-                                    <option value="0">Pending</option>
-                                    <option value="1">Cancelled</option>
-                                    <option value="2">Finished</option>
+                            <div id="mode-selector" class="controls">
+                            <input type="radio" name="type" id="changemode-walking" checked="checked">
+                            <label for="changemode-walking">Walking</label>
 
-                                </select>
-                            </div>  
+                            <input type="radio" name="type" id="changemode-transit">
+                            <label for="changemode-transit">Transit</label>
+
+                            <input type="radio" name="type" id="changemode-driving">
+                            <label for="changemode-driving">Driving</label>
+                            </div>
+                            <div id="map"></div>
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -139,5 +174,106 @@
                 </div>
             </div>
         </div>
+
+        <script>
+      // This example requires the Places library. Include the libraries=places
+      // parameter when you first load the API. For example:
+      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          mapTypeControl: false,
+          center: {lat: -33.8688, lng: 151.2195},
+          zoom: 13
+        });
+
+        new AutocompleteDirectionsHandler(map);
+      }
+
+       /**
+        * @constructor
+       */
+      function AutocompleteDirectionsHandler(map) {
+        this.map = map;
+        this.originPlaceId = null;
+        this.destinationPlaceId = null;
+        this.travelMode = 'WALKING';
+        var originInput = document.getElementById('origin-input');
+        var destinationInput = document.getElementById('destination-input');
+        var modeSelector = document.getElementById('mode-selector');
+        this.directionsService = new google.maps.DirectionsService;
+        this.directionsDisplay = new google.maps.DirectionsRenderer;
+        this.directionsDisplay.setMap(map);
+
+        var originAutocomplete = new google.maps.places.Autocomplete(
+            originInput, {placeIdOnly: true});
+        var destinationAutocomplete = new google.maps.places.Autocomplete(
+            destinationInput, {placeIdOnly: true});
+
+        this.setupClickListener('changemode-walking', 'WALKING');
+        this.setupClickListener('changemode-transit', 'TRANSIT');
+        this.setupClickListener('changemode-driving', 'DRIVING');
+
+        this.setupPlaceChangedListener(originAutocomplete, 'ORIG');
+        this.setupPlaceChangedListener(destinationAutocomplete, 'DEST');
+
+        this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(originInput);
+        this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(destinationInput);
+        this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(modeSelector);
+      }
+
+      // Sets a listener on a radio button to change the filter type on Places
+      // Autocomplete.
+      AutocompleteDirectionsHandler.prototype.setupClickListener = function(id, mode) {
+        var radioButton = document.getElementById(id);
+        var me = this;
+        radioButton.addEventListener('click', function() {
+          me.travelMode = mode;
+          me.route();
+        });
+      };
+
+      AutocompleteDirectionsHandler.prototype.setupPlaceChangedListener = function(autocomplete, mode) {
+        var me = this;
+        autocomplete.bindTo('bounds', this.map);
+        autocomplete.addListener('place_changed', function() {
+          var place = autocomplete.getPlace();
+          if (!place.place_id) {
+            window.alert("Please select an option from the dropdown list.");
+            return;
+          }
+          if (mode === 'ORIG') {
+            me.originPlaceId = place.place_id;
+          } else {
+            me.destinationPlaceId = place.place_id;
+          }
+          me.route();
+        });
+
+      };
+
+      AutocompleteDirectionsHandler.prototype.route = function() {
+        if (!this.originPlaceId || !this.destinationPlaceId) {
+          return;
+        }
+        var me = this;
+
+        this.directionsService.route({
+          origin: {'placeId': this.originPlaceId},
+          destination: {'placeId': this.destinationPlaceId},
+          travelMode: this.travelMode
+        }, function(response, status) {
+          if (status === 'OK') {
+            me.directionsDisplay.setDirections(response);
+          } else {
+            window.alert('Directions request failed due to ' + status);
+          }
+        });
+      };
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgMHMC4TPKzYN5Bt9X1lCGpO5Um7nDDIY&libraries=places&callback=initMap"
+        async defer></script>
     </body>
+    
 </html>

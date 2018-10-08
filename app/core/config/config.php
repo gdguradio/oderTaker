@@ -6,7 +6,7 @@ class connect_pdo {
 
     public function __construct() {
             define('DBHOST', '127.0.0.1'); // database host address - localhost is usually fine
-            define('DBNAME', 'todolist'); // database name - must already exist
+            define('DBNAME', 'mapRoutes'); // database name - must already exist
             define('DBUSER', 'root'); // database username - must already exist
             define('DBPASS', 'qweasdzxc'); // database password for above username
         

@@ -1,13 +1,13 @@
 $(document).ready(function () {
-    selecttask("selectall");
-    
+    selectallRoutes();
+    // autoloadPlaces();
 
 
-    $('#tasktable').on('click','.star', function () {
+    $('#mapRoutesTable').on('click','.star', function () {
         $(this).toggleClass('star-checked');
     });
 
-    $('#tasktable').on('click','.ckbox label', function () {
+    $('#mapRoutesTable').on('click','.ckbox label', function () {
         $('.ckbox label').not(this).parents('tr').removeClass('selected');
         $(this).parents('tr').addClass('selected');
     });
@@ -31,7 +31,7 @@ $(document).ready(function () {
         $("[name=task]").val("");
         $("[name=task_person]").val("");
         $("[name=task_status]").val(0);
-        modal.find('.modal-title').text(action + " entry")
+        modal.find('.modal-title').text(action + " Entry")
         $('#demoform').attr('data-action',action);
         
         if (action == "Add") {
@@ -42,10 +42,10 @@ $(document).ready(function () {
         }
         if (action == "Edit") {
 
-            var name = $("#tasktable tr.selected td:nth-child(2)").find('h4.title').text();
-            var date = $("#tasktable tr.selected td:nth-child(2)").find('span.media-meta').text();
-            var task = $("#tasktable tr.selected").find("p.summary").text();
-            var status = $("#tasktable tr.selected").attr('data-taskstatus');
+            var name = $("#mapRoutesTable tr.selected td:nth-child(2)").find('h4.title').text();
+            var date = $("#mapRoutesTable tr.selected td:nth-child(2)").find('span.media-meta').text();
+            var task = $("#mapRoutesTable tr.selected").find("p.summary").text();
+            var status = $("#mapRoutesTable tr.selected").attr('data-taskstatus');
             $('#datetimepicker5').datetimepicker({
                 defaultDate: date
             });
@@ -65,7 +65,7 @@ $(document).ready(function () {
         var data = $('#demoform').serialize();
         var action = "delete";
         var sysid = "";
-        $("#tasktable tr.selected").attr('data-sysid') ? sysid = $("#tasktable tr.selected").attr('data-sysid') : sysid = "";
+        $("#mapRoutesTable tr.selected").attr('data-sysid') ? sysid = $("#mapRoutesTable tr.selected").attr('data-sysid') : sysid = "";
         formsubmit(action,data,sysid)
         
 
@@ -79,7 +79,7 @@ $(document).ready(function () {
         var data = $('#demoform').serialize();
         var action = $('#demoform').attr('data-action');
         var sysid = "";
-        $("#tasktable tr.selected").attr('data-sysid') ? sysid = $("#tasktable tr.selected").attr('data-sysid') : sysid = "";
+        $("#mapRoutesTable tr.selected").attr('data-sysid') ? sysid = $("#mapRoutesTable tr.selected").attr('data-sysid') : sysid = "";
         formsubmit(action,data,sysid)
         
         
@@ -87,20 +87,17 @@ $(document).ready(function () {
     });
 });
 
-function selecttask(action){
+function selectallRoutes(action){
     $.ajax({
         type: 'POST',
-        url: '/Demo/include/demo.php',
+        url: '/orderTaker/app/controllers/MapRoutes/loadAdll',
         dataType: "json",
-        data: {
-            action: action
-        },
         success: function (data) {
             
         }
     }).done(function (data) {
         if (data.length > 0) {
-            $("#tasktable tbody").empty();
+            $("#mapRoutesTable tbody").empty();
         }
         console.log(data)
         var row;
@@ -112,12 +109,29 @@ function selecttask(action){
         }
 
 
-        $("#tasktable tbody").append(row);
+        $("#mapRoutesTable tbody").append(row);
         
     });
 
 }
+function autoloadPlaces(){
 
+    var apikey = "<?php echo site_url();?>";
+    
+    $.ajax({
+        type: 'POST',
+        url: '/orderTaker/app/controllers/MapRoutes/loadAdll',
+        dataType: "json",
+        data: {
+            data: data,
+            action: action,
+            sysid: sysid
+        },
+        success: function (data) {
+
+        }
+    })
+}
 function formsubmit(action,data,sysid){
     $.ajax({
         type: 'POST',
@@ -144,3 +158,8 @@ function formsubmit(action,data,sysid){
     });
 
 }
+
+
+
+
+

@@ -1,6 +1,6 @@
 <?php
     Class App{
-        protected $controller = 'Dashboard';
+        protected $controller = 'MapRoutes';
         protected $method = 'index';
         protected $params = [];
         public function __construct(){
@@ -21,6 +21,7 @@
             }
 
             $this->params = $url ? array_values($url) : [];
+
             call_user_func_array([$this->controller,$this->method],$this->params);
         }
         public function parseUrl(){
